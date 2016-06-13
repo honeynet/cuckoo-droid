@@ -4,6 +4,7 @@
 # See the file 'docs/LICENSE' for copying permission.
 
 import os
+import json
 import ConfigParser
 
 from lib.cuckoo.common.constants import CUCKOO_ROOT
@@ -60,15 +61,8 @@ class Config:
 
 def parse_options(options):
     """Parse the analysis options field to a dictionary."""
-    ret = {}
-    for field in options.split(","):
-        if "=" not in field:
-            continue
-
-        key, value = field.split("=", 1)
-        ret[key.strip()] = value.strip()
-    return ret
+    return json.loads(options)
 
 def emit_options(options):
-    """Emit the analysis options from a dictionary to a string."""
-    return ",".join("%s=%s" % (k, v) for k, v in options.items())
+    """Emit the analysis options from a dictionary to a JSON string."""
+    return json.dumps(options)

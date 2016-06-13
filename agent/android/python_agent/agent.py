@@ -5,6 +5,7 @@
 import os
 import sys
 import time
+import json
 import socket
 import string
 import random
@@ -103,7 +104,7 @@ class Agent:
         return True
 
     def add_config(self, options):
-        """Creates analysis.conf file from current analysis options.
+        """Creates analysis.json file from current analysis options.
         @param options: current configuration options, dict format.
         @return: operation status.
         """
@@ -113,8 +114,7 @@ class Agent:
         if type(options) != dict:
             return False
 
-        config = ConfigParser.RawConfigParser()
-        config.add_section("analysis")
+        config = {"analysis" : {}}
 
         try:
             for key, value in options.items():
@@ -124,12 +124,19 @@ class Agent:
                         value = value.encode("utf-8")
                     except UnicodeEncodeError:
                         pass
+                # Json can only serialize these types
+                if type(value) in [dict, list, str, int, float, bool]:
+                    config["analysis"][key] = value
+                else:
+                    try:
+                        value = value.__str__()
+                    except AttributeError:
+                        value = ""
+                    config["analysis"][key] = value
 
-                config.set("analysis", key, value)
-
-            config_path = os.path.join(ANALYZER_FOLDER, "analysis.conf")
+            config_path = os.path.join(ANALYZER_FOLDER, "analysis.json")
             with open(config_path, "wb") as config_file:
-                config.write(config_file)
+                json.dump(config, config_file)
         except Exception as e:
             ERROR_MESSAGE = str(e)
             return False
