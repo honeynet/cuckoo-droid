@@ -35,32 +35,9 @@ class Analyzer(object):
         """Get analysis options.
         @return: options dict.
         """
-        # The analysis package can be provided with some options in the
-        # following format:
-        #   option1=value1,option2=value2,option3=value3
-        #
-        # Here we parse such options and provide a dictionary that will be made
-        # accessible to the analysis package.
-        options = {}
         if self.config.options:
-            try:
-                # Split the options by comma.
-                fields = self.config.options.strip().split(",")
-            except ValueError as e:
-                log.warning("Failed parsing the options: %s", e)
-            else:
-                for field in fields:
-                    # Split the name and the value of the option.
-                    try:
-                        key, value = field.strip().split("=")
-                    except ValueError as e:
-                        log.warning("Failed parsing option (%s): %s", field, e)
-                    else:
-                        # If the parsing went good, we add the option to the
-                        # dictionary.
-                        options[key.strip()] = value.strip()
-
-        return options
+            return self.config.options
+        return {}
 
     def prepare(self):
         # Initialize logging.
