@@ -11,4 +11,11 @@ class Config:
         config = json.load(open(cfg))
         for section in config:
             for name in config[section]:
-                setattr(self, name, config[section][name])
+            	value = config[section][name]
+            	# Options can be UTF encoded.
+            	if isinstance(value, basestring):
+            		try:
+            			value = value.encode("utf-8")
+            		except UnicodeEncodeError:
+            			pass
+                setattr(self, name, value)
