@@ -3,15 +3,19 @@
 # See the file 'docs/LICENSE' for copying permission.
 # Originally contributed by Check Point Software Technologies, Ltd.
 
-import logging
+
+import os
 import sys
 import time
-import os
+import logging
+import StringIO
 from lib.api import adb
 from threading import Thread
+from lib.common.results import NetlogFile
+from lib.common.abstracts import Auxiliary
 from lib.api.droidbot.dtypes import App, Device
 from lib.api.droidbot.event import AppEventManager
-from lib.common.abstracts import Auxiliary
+
 
 log = logging.getLogger(__name__)
 
@@ -54,8 +58,24 @@ class DroidBot(Auxiliary, Thread):
 	def stop(self):
 		self.device.disconnect()
 		self.event_manager.stop()
+
+		# upload droidbot output to host
+		self.upload("droidbot_event.json", "event.json")
+		self.upload("logcat.log", "logcat.log")
 		log.info("Droidbot stopped")
 		return
 
 
-	
+	def upload(self, out_file, remote_file):
+		filename = os.path.join(self.output_dir, out_file)
+		while not os.path.exists(filename):
+			time.sleep(2)
+		file = open(filename, "r")
+		tmpio = StringIO.StringIO(file.read())
+		nf = NetlogFile("logs/%s" % remote_file)
+
+		for chunk in tmpio:
+			nf.sock.sendall(chunk)
+
+		nf.close()
+		file.close()
