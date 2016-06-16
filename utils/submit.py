@@ -73,6 +73,18 @@ def main():
 
     db = Database()
 
+    #Convert options format into JSON-encoded format
+    if args.options:
+        import json
+        options = {}
+        for field in args.options.split(","):
+            if "=" not in field:
+                continue
+
+            key, value = field.split("=", 1)
+            options[key.strip()] = value.strip()
+        args.options = json.dumps(options)
+
     if args.url:
         target = to_unicode(args.target)
         if args.remote:
