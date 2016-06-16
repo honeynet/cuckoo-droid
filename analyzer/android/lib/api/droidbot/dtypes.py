@@ -1,18 +1,19 @@
 # utils for setting up Android environment and sending events
 
 __author__ = "yuanchun"
-import adb
-import logging
-import time
 import os
 import re
+import time
+import logging
 import subprocess
-import adb
+from lib.api import adb
+from lib.core.config import Config
+
 
 DEFAULT_NUM = "1234567890"
 DEFAULT_CONTENT = "Hello world!"
 
-class Device():
+class Device(object):
 	"""
 	this class describes a connected device
 	"""
@@ -27,18 +28,26 @@ class Device():
 		if not os.path.exists(self.output_dir):
 			os.mkdir(self.output_dir)
 		self.get_display_info()
-		"""
-		#HAVE NOT DONE 
+
 		self.logcat = self.redirect_logcat()
-		logger.info("DroidBot is loaded !")
-		from state_monitor import StateMonitor
-		self.state_monitor = StateMonitor(device = self)
-		self.state_monitor.start()
+
+		self.logger.info("DroidBot is loaded !")
+
+		"""
+		StateMonitor - TO DO ?
 		"""
 
 
 	def redirect_logcat(self, output_dir = None):
-		pass
+		if output_dir is None:
+			output_dir = self.output_dir
+
+		logcat_file = open(os.path.join(self.output_dir, "logcat.log"), "w")
+
+		import subprocess
+		logcat = subprocess.Popen(["logcat", "-v", "threadtime"], stdin = subprocess.PIPE, stdout = logcat_file)
+
+		return logcat
 
 	def disconnect(self):
 		"""
@@ -46,14 +55,7 @@ class Device():
 		:return:
 		"""
 		self.logcat.terminate()
-		self.state_monitor.stop()
-
-	def get_view_client(self):
-		"""
-		get view_client connection of the device
-		:return:
-		"""
-		pass
+		#self.state_monitor.stop()
 
 	def is_foreground(self, app):
 		"""
@@ -242,24 +244,6 @@ class Device():
 		intent = Intent(suffix = package_name)
 		self.send_intent(intent)
 
-	def get_service_names(self):
-		"""
-		get current running services
-		:return: list of services
-		"""
-		services = []
-		dat = adb.shell("dumpsys activity services")
-		lines = dat.splitlines()
-		serviceRE = re.compile("^.+ServiceRecord{.+ ([A-Za-z0-9_.]+)/.([A-Za-z0-9_.]+)}")
-
-		for line in lines:
-			m = serviceRE.search(line)
-			if m:
-				package = m.group(1)
-				service = m.group(2)
-				services.append("%s/%s" % (package, service))
-		return services
-
 	def get_package_path(self, package_name):
 		"""
 		get installation path of a package (app)
@@ -304,96 +288,31 @@ class App(object):
 
 		self.app_path = app_path
 		self.output_dir = output_dir
-		self.androguard = AndroguardAnalysis(self.app_path)
-		self.package_name = self.androguard.a.get_package()
-		self.main_activity = self.androguard.a.get_main_activity()
-		self.possible_broadcasts = self.get_possible_broadcasts()
+		
+		config = Config(cfg="analysis.json")
 
-
-	def get_androguard_analysis(self):
-		"""
-		run static analysis of app
-		:return:get_adb().takeSnapshot(reconnect=True)
-		"""
-		if self.androguard is None:
-			self.androguard = AndroguardAnalysis(self.app_path)
-		return self.androguard
-
-
-	def get_package_name(self):
-		"""
-		get package name of current app
-		:return:
-		"""
-		if self.package_name is None:
-			self.package_name = self.get_androguard_analysis().a.get_package()
-		return self.package_name
-
-	def get_main_activity(self):
-		"""
-		get package name of current app
-		:return:
-		"""
-		if self.main_activity is None:
-			self.main_activity = self.get_androguard_analysis().a.get_main_activity()
-		return self.main_activity
+		self.package_name = config.options["apk_entry"].split(":")[0]
+		self.main_activity = config.options["apk_entry"].split(":")[1]
+		self.possible_broadcasts = config.options["apk_possible_broadcasts"]
 
 	def get_start_intent(self):
 		"""
 		get an intent to start the app
 		:return: Intent
 		"""
-		package_name = self.get_package_name()
-		if self.get_main_activity():
-			package_name += "/%s" % self.get_main_activity()
+		package_name = self.package_name
+		if self.main_activity:
+			package_name += "/%s" % self.main_activity
 		return Intent(suffix = package_name)
 
-
 	def get_possible_broadcasts(self):
-		possible_broadcasts = set()
-		androguard = self.get_androguard_analysis()
-		if androguard is None:
-			return androguard
+		return self.possible_broadcasts
 
-		androguard_a = self.get_androguard_analysis().a
-		receivers = androguard_a.get_receivers()
+	def get_main_activity(self):
+		return self.main_activity
 
-		for receiver in receivers:
-			intent_filters = androguard_a.get_intent_filters("receiver", receiver)
-			if intent_filters.has_key("action"):
-				actions = intent_filters["action"]
-			else:
-				actions = []
-			if intent_filters.has_key("category"):
-				categories = intent_filters["category"]
-			else:
-				categories = []
-			categories.append(None)
-			for action in actions:
-				for category in categories:
-					intent = Intent(prefix = "broadcast", action = action, category = category)
-					possible_broadcasts.add(intent)
-		return possible_broadcasts
-
-
-class AndroguardAnalysis(object):
-	"""
-	analysis result of androguard
-	"""
-	def __init__(self, app_path):
-		"""
-		:param app_path: local file path of app, should not be None
-		analyse app specified by app_path
-		"""
-		self.app_path = app_path
-		from androguard.core.bytecodes.apk import APK
-		self.a = APK(app_path)
-		self.d = None
-		self.dx = None
-
-	def get_detailed_analysis(self):
-		from androguard.misc import AnalyzeDex
-		self.d, self.dx = AnalyzeDex(self.a.get_dex(), raw=True)
+	def get_package_name(self):
+		return self.package_name
 
 
 class Intent(object):
@@ -436,7 +355,7 @@ class Intent(object):
 		"""
 		if self.cmd is not None:
 			return self.cmd
-		cmd = "am "
+		cmd = "/system/bin/sh /system/bin/am "
 		if self.prefix:
 			cmd += self.prefix
 		if self.action is not None:
