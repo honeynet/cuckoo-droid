@@ -49,8 +49,8 @@ class Analyzer(object):
         # We update the target according to its category. If it's a file, then
         # we store the path.
         if self.config.category == "file":
-            self.target = os.path.join("/data/local/tmp", str(self.config.file_name))
-            shutil.copyfile("config/hooks.json", "/data/local/tmp/hooks.json")
+            self.target = os.path.join("/tmp", str(self.config.file_name))
+            shutil.copyfile("config/hooks.json", "/tmp/hooks.json")
         # If it's a URL, well.. we store the URL.
         else:
             self.target = self.config.target
