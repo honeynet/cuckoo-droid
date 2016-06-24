@@ -1,8 +1,6 @@
-# Copyright (C) 2014-2016 Cuckoo Foundation.
+# Copyright (C) 2016 Cuckoo Foundation.
 # This file is part of Cuckoo Sandbox - http://www.cuckoosandbox.org
 # See the file 'docs/LICENSE' for copying permission.
-# Originally contributed by Check Point Software Technologies, Ltd.
-
 
 import os
 import sys
@@ -37,8 +35,6 @@ class DroidBot(Auxiliary, Thread):
 		self.app_path = adb.getLastInstalledPackagePath()
 		self.app = App(self.app_path, self.output_dir)
 
-		#Since we use the default environment, no need to deploy env_manager
-		#self.env_manager = AppEnvManager(self.app)
 		self.event_manager = AppEventManager(device = self.device, app = self.app)
 
 	

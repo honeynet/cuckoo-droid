@@ -3,13 +3,13 @@
 # See the file 'docs/LICENSE' for copying permission.
 # Originally contributed by Check Point Software Technologies, Ltd.
 
-import logging
 import os
-import subprocess
 import re
+import logging
+import subprocess
 from droidbot.window import Window
-from droidbot.common import _nd, _nh, _ns, obtainPxPy, obtainVxVy, obtainVwVh
 from lib.common.utils import send_file
+from droidbot.common import _nd, _nh, _ns, obtainPxPy, obtainVxVy, obtainVwVh
 
 log = logging.getLogger(__name__)
 
@@ -140,8 +140,6 @@ def getLastInstalledPackagePath():
     return "/data/app/%s" % file_name
 
 
-#Modified APIs from AndroidViewClient
-#https://github.com/dtmilano/AndroidViewClient/
 def getTopActivityName():
     """
     Get current activity
@@ -399,7 +397,7 @@ def getWindows():
     return windows
 
 
-def transformPointByOrientation((x, y), orientationOrig, orientationDest):
+def __transformPointByOrientation((x, y), orientationOrig, orientationDest):
     if orientationOrig != orientationDest:
         if orientationDest == 1:
             _x = x
@@ -427,7 +425,7 @@ def getOrientation():
 def touch(x, y, orientation=-1, eventType=DOWN_AND_UP):
     if orientation == -1:
         orientation = getOrientation()
-    shell("sh /system/bin/input tap %d %d" % transformPointByOrientation((x, y), orientation, self.display["orientation"]))
+    shell("sh /system/bin/input tap %d %d" % __transformPointByOrientation((x, y), orientation, self.display["orientation"]))
 
 def longTouch(x, y, duration=2000, orientation=-1):
     """
@@ -449,8 +447,8 @@ def drag((x0, y0), (x1, y1), duration, steps=1, orientation=-1):
     """
     if orientation == -1:
         orientation = getOrientation()
-    (x0, y0) = transformPointByOrientation((x0, y0), orientation, getOrientation())
-    (x1, y1) = transformPointByOrientation((x1, y1), orientation, getOrientation())
+    (x0, y0) = __transformPointByOrientation((x0, y0), orientation, getOrientation())
+    (x1, y1) = __transformPointByOrientation((x1, y1), orientation, getOrientation())
 
     version = getSDKVersion()
     if version <= 15:

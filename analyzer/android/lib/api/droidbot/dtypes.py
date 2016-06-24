@@ -1,6 +1,10 @@
+# Copyright (C) 2015 Yuanchun Li
+# Copyright (C) 2016 Cuckoo Foundation.
+# This file is part of Cuckoo Sandbox - http://www.cuckoosandbox.org
+# See the file 'docs/LICENSE' for copying permission.
+
 # utils for setting up Android environment and sending events
 
-__author__ = "yuanchun"
 import os
 import re
 import time
@@ -33,10 +37,6 @@ class Device(object):
 
 		self.logger.info("DroidBot is loaded !")
 
-		"""
-		StateMonitor - TO DO ?
-		"""
-
 
 	def redirect_logcat(self, output_dir = None):
 		if output_dir is None:
@@ -55,7 +55,7 @@ class Device(object):
 		:return:
 		"""
 		self.logcat.terminate()
-		#self.state_monitor.stop()
+
 
 	def is_foreground(self, app):
 		"""
@@ -223,7 +223,7 @@ class Device(object):
 		:param event: the event to be sent
 		:return:
 		"""
-		self.logger.info("sending event: %s" % event)
+		self.logger.info("Sending event: %s" % event)
 		event.send(self)
 
 	def start_app(self, app):
@@ -239,7 +239,7 @@ class Device(object):
 			if app.get_main_activity():
 				package_name = "/%s" % app.get_main_activity()
 		else:
-			self.logger.warning("unsupported param " + app + " with type: ", type(app))
+			self.logger.warning("Unsupported param " + app + " with type: ", type(app))
 			return
 		intent = Intent(suffix = package_name)
 		self.send_intent(intent)
