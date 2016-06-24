@@ -1,9 +1,14 @@
+# Copyright (C) 2015 Yuanchun Li
+# Copyright (C) 2016 Cuckoo Foundation.
+# This file is part of Cuckoo Sandbox - http://www.cuckoosandbox.org
+# See the file 'docs/LICENSE' for copying permission.
+
 # This file is responsible for generating events to interact with app at runtime
 # The events includes:
 #     1. UI events. click, touch, etc
 #     2, intent events. broadcast events of App installed, new SMS, etc.
 # The intention of these events is to exploit more mal-behaviours of app as soon as possible
-__author__ = 'liyc'
+
 import logging
 import json
 import time
@@ -31,6 +36,10 @@ POSSIBLE_KEYS = [
     "VOLUME_UP"
     "VOLUME_DOWN"
 ]
+
+EVENT_FLAG_STARTED = "+started"
+EVENT_FLAG_START_APP = "+start_app"
+EVENT_FLAG_TOUCH = "+touch"
 
 POSSIBLE_ACTIONS = '''
 android.intent.action.AIRPLANE_MODE_CHANGED
@@ -203,7 +212,7 @@ class KeyEvent(AppEvent):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.event_type = 'key'
+        self.event_type = "key"
         self.name = name
 
     @staticmethod
@@ -252,14 +261,14 @@ class TouchEvent(UIEvent):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.event_type = 'touch'
+        self.event_type = "touch"
         self.x = x
         self.y = y
 
     @staticmethod
     def get_random_instance(device, app):
-        x = random.uniform(0, device.get_display_info()['width'])
-        y = random.uniform(0, device.get_display_info()['height'])
+        x = random.uniform(0, device.get_display_info()["width"])
+        y = random.uniform(0, device.get_display_info()["height"])
         return TouchEvent(x, y)
 
     def send(self, device):
@@ -276,15 +285,15 @@ class LongTouchEvent(UIEvent):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.event_type = 'long_touch'
+        self.event_type = "long_touch"
         self.x = x
         self.y = y
         self.duration = duration
 
     @staticmethod
     def get_random_instance(device, app):
-        x = random.uniform(0, device.get_display_info()['width'])
-        y = random.uniform(0, device.get_display_info()['height'])
+        x = random.uniform(0, device.get_display_info()["width"])
+        y = random.uniform(0, device.get_display_info()["height"])
         return LongTouchEvent(x, y)
 
     def send(self, device):
@@ -301,7 +310,7 @@ class DragEvent(UIEvent):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.event_type = 'drag'
+        self.event_type = "drag"
         self.start_x = start_x
         self.start_y = start_y
         self.end_x = end_x
@@ -310,10 +319,10 @@ class DragEvent(UIEvent):
 
     @staticmethod
     def get_random_instance(device, app):
-        start_x = random.uniform(0, device.get_display_info()['width'])
-        start_y = random.uniform(0, device.get_display_info()['height'])
-        end_x = random.uniform(0, device.get_display_info()['width'])
-        end_y = random.uniform(0, device.get_display_info()['height'])
+        start_x = random.uniform(0, device.get_display_info()["width"])
+        start_y = random.uniform(0, device.get_display_info()["height"])
+        end_x = random.uniform(0, device.get_display_info()["width"])
+        end_y = random.uniform(0, device.get_display_info()["height"])
         return DragEvent(start_x, start_y, end_x, end_y)
 
     def send(self, device):
@@ -332,12 +341,12 @@ class TypeEvent(UIEvent):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.event_type = 'type'
+        self.event_type = "type"
         self.text = text
 
     def send(self, device):
-        escaped = self.text.replace('%s', '\\%s')
-        encoded = escaped.replace(' ', '%s')
+        escaped = self.text.replace("%s", "\\%s")
+        encoded = escaped.replace(" ", "%s")
         adb.type(encoded)
         return True
 
@@ -351,18 +360,17 @@ class IntentEvent(AppEvent):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.event_type = 'intent'
+        self.event_type = "intent"
         self.intent = intent.get_cmd()
 
     @staticmethod
     def get_random_instance(device, app):
         action = random.choice(POSSIBLE_ACTIONS)
-        intent = Intent(prefix='broadcast', action=action)
+        intent = Intent(prefix="broadcast", action=action)
         return IntentEvent(intent)
 
     def send(self, device):
         data = adb.shell(self.intent)
-        open("/data/clgt.log","ab").write("Intent : %s - Output : %s" % (self.intent, data))
         return True
 
 
@@ -381,7 +389,7 @@ class EmulatorEvent(AppEvent):
         if event_dict is not None:
             self.__dict__ = event_dict
             return
-        self.event_type = 'emulator'
+        self.event_type = "emulator"
         self.event_name = event_name
         self.event_data = event_data
 
@@ -389,9 +397,9 @@ class EmulatorEvent(AppEvent):
         """
         :param device: Device
         """
-        if self.event_name == 'call':
-            if self.event_data and 'phone' in self.event_data.keys():
-                phone = self.event_data['phone']
+        if self.event_name == "call":
+            if self.event_data and "phone" in self.event_data.keys():
+                phone = self.event_data["phone"]
                 device.receive_call(phone)
                 time.sleep(2)
                 device.accept_call(phone)
@@ -404,11 +412,11 @@ class EmulatorEvent(AppEvent):
                 time.sleep(2)
                 device.cancel_call()
 
-        elif self.event_name == 'sms':
-            if self.event_data and 'phone' in self.event_data.keys() \
-                    and 'content' in self.event_data.keys():
-                phone = self.event_data['phone']
-                content = self.event_data['content']
+        elif self.event_name == "sms":
+            if self.event_data and "phone" in self.event_data.keys() \
+                    and "content" in self.event_data.keys():
+                phone = self.event_data["phone"]
+                content = self.event_data["content"]
                 device.receive_sms(phone, content)
             else:
                 device.receive_sms()
@@ -419,7 +427,7 @@ class EmulatorEvent(AppEvent):
 
     @staticmethod
     def get_random_instance(device, app):
-        event_name = random.choice(['call', 'sms'])
+        event_name = random.choice(["call", "sms"])
         return EmulatorEvent(event_name=event_name)
 
 
@@ -440,25 +448,25 @@ class ContextEvent(AppEvent):
         :param event: the event to perform
         """
         if event_dict is not None:
-            assert 'event_type' in event_dict.keys()
-            assert 'context' in event_dict.keys()
-            assert 'event' in event_dict.keys()
-            assert event_dict['event_type'] == 'context'
-            self.event_type = event_dict['event_type']
+            assert "event_type" in event_dict.keys()
+            assert "context" in event_dict.keys()
+            assert "event" in event_dict.keys()
+            assert event_dict['event_type'] == "context"
+            self.event_type = event_dict["event_type"]
 
-            context_dict = event_dict['context']
-            context_type = context_dict['context_type']
+            context_dict = event_dict["context"]
+            context_type = context_dict["context_type"]
             ContextType = CONTEXT_TYPES[context_type]
             self.context = ContextType(context_dict=context_dict)
 
-            sub_event_dict = event_dict['event']
-            sub_event_type = sub_event_dict['event_type']
+            sub_event_dict = event_dict["event"]
+            sub_event_type = sub_event_dict["event_type"]
             SubEventType = EVENT_TYPES[sub_event_type]
             self.event = SubEventType(dict=sub_event_dict)
             return
 
         assert isinstance(event, AppEvent)
-        self.event_type = 'context'
+        self.event_type = "context"
         self.context = context
         self.event = event
 
@@ -472,7 +480,7 @@ class ContextEvent(AppEvent):
         return self.event.send(device)
 
     def to_dict(self):
-        return {'event_type': self.event_type, 'context': self.context.__dict__, 'event': self.event.__dict__}
+        return {"event_type": self.event_type, "context": self.context.__dict__, "event": self.event.__dict__}
 
 
 class Context(object):
@@ -496,7 +504,7 @@ class ActivityNameContext(Context):
         if context_dict is not None:
             self.__dict__ = context_dict
             return
-        self.context_type = 'activity'
+        self.context_type = "activity"
         self.activity_name = activity_name
 
     def __eq__(self, other):
@@ -519,7 +527,7 @@ class WindowNameContext(Context):
         if context_dict is not None:
             self.__dict__ = context_dict
             return
-        self.context_type = 'window'
+        self.context_type = "window"
         self.window_name = window_name
 
     def __eq__(self, other):
@@ -534,8 +542,8 @@ class WindowNameContext(Context):
 
 
 CONTEXT_TYPES = {
-    'activity': ActivityNameContext,
-    'window': WindowNameContext
+    "activity": ActivityNameContext,
+    "window": WindowNameContext
 }
 
 
@@ -567,7 +575,7 @@ class AppEventManager(object):
         :param app: instance of App
         :return:
         """
-        self.logger = logging.getLogger('AppEventManager')
+        self.logger = logging.getLogger("AppEventManager")
         self.enabled = True
 
         self.device = device
@@ -607,15 +615,6 @@ class AppEventManager(object):
         if self.event_factory is not None:
             self.event_factory.dump()
 
-    # def on_state_update(self, old_state, new_state):
-    #     """
-    #     callback method invoked by AppstateMonitor
-    #     :param old_state: origin state of App
-    #     :param new_state: new state of App
-    #     :return:
-    #     """
-    #
-
     def set_event_factory(self, event_factory):
         """
         set event factory of the app
@@ -628,7 +627,7 @@ class AppEventManager(object):
         """
         start sending event
         """
-        self.logger.info("start sending events, policy is %s" % self.policy)
+        self.logger.info("Start sending events, policy is %s" % self.policy)
 
         if self.event_duration:
             self.timer = Timer(self.event_duration, self.stop)
@@ -642,7 +641,7 @@ class AppEventManager(object):
 
         self.stop()
         self.dump()
-        self.logger.info("finish sending events, saved to droidbot_event.json")
+        self.logger.info("Finish sending events, saved to droidbot_event.json")
 
     def stop(self):
         """
@@ -680,30 +679,19 @@ class EventFactory(object):
         count = 0
         while event_manager.enabled and count < event_manager.event_count:
             try:
-                # make sure the first event is go to HOME screen
-                # the second event is to start the app
-                #if count == 0:
-                #    event = KeyEvent(name="HOME")
-                #elif count == 1:
-                #    event = IntentEvent(self.app.get_start_intent())
-                #else:
-                import traceback
-                try:
-                    event = self.generate_event()
-                except:
-                    open("/data/clgt.log","wb").write(traceback.format_exc())
+                event = self.generate_event()
                 event_manager.add_event(event)
                 time.sleep(event_manager.event_interval)
             except KeyboardInterrupt:
                 break
             except StopSendingEventException as e:
-                #self.device.logger.warning(e.message)
+                self.device.logger.warning(e.message)
                 break
             except RuntimeError as e:
-                #self.device.logger.warning(e.message)
+                self.device.logger.warning(e.message)
                 break
             except Exception as e:
-                #self.device.logger.warning(e.message)
+                self.device.logger.warning(e.message)
                 continue
             count += 1
 
@@ -753,13 +741,13 @@ class DynamicEventFactory(EventFactory):
             self.possible_broadcasts.add(intent)
 
         self.possible_inputs = {
-            'account': 'droidbot',
-            'name': 'droidbot',
-            'email': 'droidbot@honeynet.com',
-            'password': 'droidbot',
-            'pwd': 'droidbot',
-            'text': 'hello world',
-            'number': '1234567890'
+            "account": "droidbot",
+            "name": "droidbot",
+            "email": "droidbot@honeynet.com",
+            "password": "droidbot",
+            "pwd": "droidbot",
+            "text": "hello world",
+            "number": "1234567890"
         }
 
         # randomized touch events for each webview
@@ -865,9 +853,7 @@ class DynamicEventFactory(EventFactory):
                 self.last_event_flag += "+back"
                 event = ContextEvent(context=current_context, event=KeyEvent('BACK'))
                 return event
-        open("/data/clgt.log","ab").write("Check foreground\n")
         if not self.device.is_foreground(self.app):
-            open("/data/clgt.log","ab").write("Not foreground\n")
             if self.last_event_flag.endswith("+start_app"):
                 # It seems the app stuck at some state, and cannot be started
                 # just pass to let viewclient deal with this case
@@ -877,7 +863,6 @@ class DynamicEventFactory(EventFactory):
                 component = self.app.get_package_name()
                 if self.app.get_main_activity():
                     component += "/%s" % self.app.get_main_activity()
-                open("/data/clgt.log","ab").write("Intent - %s" % Intent(suffix = component).get_cmd())
                 return IntentEvent(Intent(suffix=component))
 
         if current_context_str not in self.exploited_views.keys():
@@ -933,8 +918,8 @@ class DynamicEventFactory(EventFactory):
 
             # if it is an EditText, try input something
             from lib.api.droidbot.viewclient import EditText
-            if isinstance(v, EditText) or 'edit' in v_cls_name\
-                    or 'text' in v_cls_name or 'input' in v_cls_name:
+            if isinstance(v, EditText) or "edit" in v_cls_name\
+                    or "text" in v_cls_name or "input" in v_cls_name:
                 for key in self.possible_inputs.keys():
                     if key in v.getId().lower() or key in v_cls_name:
                         next_event = TypeEvent(text=self.possible_inputs[key])
@@ -942,7 +927,7 @@ class DynamicEventFactory(EventFactory):
                         break
 
             # if it is a WebView, try touch randomly
-            if 'webview' in v_cls_name:
+            if "webview" in v_cls_name:
                 webview_event_count = 0
                 bounds = v.getBounds()
                 while webview_event_count < self.webview_touches:
@@ -968,16 +953,11 @@ class DynamicEventFactory(EventFactory):
         return event
 
 EVENT_TYPES = {
-    'key': KeyEvent,
-    'touch': TouchEvent,
-    'long_touch': LongTouchEvent,
-    'drag': DragEvent,
-    'type': TypeEvent,
-    'emulator': EmulatorEvent,
-    'context': ContextEvent
+    "key": KeyEvent,
+    "touch": TouchEvent,
+    "long_touch": LongTouchEvent,
+    "drag": DragEvent,
+    "type": TypeEvent,
+    "emulator": EmulatorEvent,
+    "context": ContextEvent
 }
-
-
-EVENT_FLAG_STARTED = "+started"
-EVENT_FLAG_START_APP = "+start_app"
-EVENT_FLAG_TOUCH = "+touch"
