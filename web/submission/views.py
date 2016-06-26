@@ -99,7 +99,18 @@ def index(request, task_id=None, sha1=None):
     enforce_timeout = bool(request.POST.get("enforce_timeout", False))
     tags = request.POST.get("tags", None)
 
-    options = parse_options(options)
+    _options = {}
+    try:
+        options = options.encode("utf-8")
+    except UnicodeEncodeError:
+        pass
+    for field in options.split(","):
+        if "=" not in field:
+            continue
+
+        key, value = field.split("=", 1)
+        _options[key.strip()] = value.strip()
+    options = _options
 
     # The following POST fields take precedence over the options field.
     if request.POST.get("route"):
