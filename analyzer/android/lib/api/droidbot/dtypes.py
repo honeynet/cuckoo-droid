@@ -293,7 +293,7 @@ class App(object):
 
 		self.package_name = config.options["apk_entry"].split(":")[0]
 		self.main_activity = config.options["apk_entry"].split(":")[1]
-		self.possible_broadcasts = config.options["apk_possible_broadcasts"]
+		self.possible_broadcasts = config.apk_possible_broadcasts
 
 	def get_start_intent(self):
 		"""
