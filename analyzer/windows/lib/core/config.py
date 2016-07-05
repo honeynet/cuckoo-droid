@@ -25,18 +25,4 @@ class Config:
         """Get analysis options.
         @return: options dict.
         """
-        # The analysis package can be provided with some options in the
-        # following format:
-        #   option1=value1,option2=value2,option3=value3
-        # or in the JSON format
-        try:
-            return json.loads(options)
-        except ValueError:
-            ret = {}
-            for field in options.split(","):
-                if "=" not in field:
-                    continue
-
-                key, value = field.split("=", 1)
-                ret[key.strip()] = value.strip()
-            return ret
+        return json.loads(options)

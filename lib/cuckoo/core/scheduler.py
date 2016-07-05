@@ -183,10 +183,10 @@ class AnalysisManager(threading.Thread):
             options["file_type"] = File(self.task.target).get_type()
             options["pe_exports"] = \
                 ",".join(File(self.task.target).get_exported_functions())
+            options["apk_possible_broadcasts"] = File(self.task.target).get_apk_possible_broadcasts()
 
             package, activity = File(self.task.target).get_apk_entry()
             self.task.options["apk_entry"] = "%s:%s" % (package, activity)
-            self.task.options["apk_possible_broadcasts"] = File(self.task.target).get_apk_possible_broadcasts()
 
         options["id"] = self.task.id
         options["ip"] = self.machine.resultserver_ip
