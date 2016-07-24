@@ -272,7 +272,7 @@ class TouchEvent(UIEvent):
         return TouchEvent(x, y)
 
     def send(self, device):
-        adb.longTouch(self.x, self.y, duration=300)
+        adb.longTouch(self.x, self.y, duration=100)
         return True
 
 
@@ -582,7 +582,7 @@ class AppEventManager(object):
         self.app = app
         self.policy = "dynamic"
         self.events = []
-        self.event_count = 100
+        self.event_count = 1000
         self.event_interval = 1
         self.event_duration = event_duration
         self.monkey = None
@@ -740,7 +740,8 @@ class DynamicEventFactory(EventFactory):
             intent = Intent(prefix = "broadcast", action = broadcast[1], category = broadcast[2])
             self.possible_broadcasts.add(intent)
 
-        self.possible_inputs = {
+        #can be customized from options
+        self.possible_inputs = app.get_possible_inputs() or {
             "account": "droidbot",
             "name": "droidbot",
             "email": "droidbot@honeynet.com",
@@ -754,7 +755,7 @@ class DynamicEventFactory(EventFactory):
         self.webview_touches = 5
 
         self.preferred_buttons = ["yes", "ok", "activate", "detail", "more",
-                                  "check", "agree", "try", "go", "next"]
+                                  "check", "agree", "try", "go", "next", "continue", "send"]
 
         self.choices = {
             UIEvent: 40,
@@ -806,6 +807,7 @@ class DynamicEventFactory(EventFactory):
 
         event_type = weighted_choice(self.choices)
 
+        """
         if event_type == IntentEvent and self.possible_broadcasts:
             possible_intents = self.possible_broadcasts - self.exploited_broadcasts
             if not possible_intents:
@@ -816,6 +818,7 @@ class DynamicEventFactory(EventFactory):
             intent_event = IntentEvent(intent=intent)
 
             return ContextEvent(context=current_context, event=intent_event)
+        """
 
         if event_type == KeyEvent or event_type == EmulatorEvent:
             event = KeyEvent.get_random_instance(self.device, self.app)
@@ -891,16 +894,20 @@ class DynamicEventFactory(EventFactory):
                 continue
 
             v_text = v.getText()
+            v_class = v.getClass()
             if v_text is None:
                 continue
             v_text = v_text.lower()
-            if v_text in self.preferred_buttons:
-                self.exploited_views[current_context_str].add(unique_view_str)
-                (x, y) = v.getCenter()
-                event = TouchEvent(x, y)
-                self.event_stack.append(event)
-                self.last_event_flag = "touch"
-                return event
+            v_class = v_class.lower()
+            if v_class == "android.widget.button":
+                for btn in self.preferred_buttons:
+                    if btn in v_text:
+                        self.exploited_views[current_context_str].add(unique_view_str)
+                        (x, y) = v.getCenter()
+                        event = TouchEvent(x, y)
+                        self.event_stack.append(event)
+                        self.last_event_flag = "touch"
+                        return event
 
         # no preferred view, find another
         for v in views:
@@ -927,6 +934,7 @@ class DynamicEventFactory(EventFactory):
                         break
 
             # if it is a WebView, try touch randomly
+            """
             if "webview" in v_cls_name:
                 webview_event_count = 0
                 bounds = v.getBounds()
@@ -937,6 +945,7 @@ class DynamicEventFactory(EventFactory):
                     webview_event_count += 1
 
             self.last_event_flag = "touch"
+            """
             return event
         # if reach here, it means droidbot has traverse current window once more
         self.window_passes[current_context_str] += 1

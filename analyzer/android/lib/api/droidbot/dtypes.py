@@ -294,6 +294,12 @@ class App(object):
 		self.package_name = config.options["apk_entry"].split(":")[0]
 		self.main_activity = config.options["apk_entry"].split(":")[1]
 		self.possible_broadcasts = config.apk_possible_broadcasts
+		try:
+			self.possible_inputs = config.options["inputs"]
+			if type(self.possible_inputs) != dict:
+				self.possible_inputs = None
+		except KeyError:
+			self.possible_inputs = None
 
 	def get_start_intent(self):
 		"""
@@ -307,6 +313,9 @@ class App(object):
 
 	def get_possible_broadcasts(self):
 		return self.possible_broadcasts
+
+	def get_possible_inputs(self):
+		return self.possible_inputs
 
 	def get_main_activity(self):
 		return self.main_activity
