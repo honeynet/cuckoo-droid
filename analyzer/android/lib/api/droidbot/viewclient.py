@@ -9,9 +9,9 @@ import time
 import copy
 import types
 import socket
-import window
-import xml.parsers.expat
 from lib.api import adb
+import xml.parsers.expat
+from window import Window
 from lib.api.droidbot.common import _nd, _nh, _ns, obtainPxPy, obtainVxVy, obtainVwVh
 
 VIEW_SERVER_HOST = 'localhost'
